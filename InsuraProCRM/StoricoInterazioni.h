@@ -1,0 +1,3 @@
+#ifndef STORICOINTERAZIONI_H
+#define STORICOINTERAZIONI_H
+#endif
