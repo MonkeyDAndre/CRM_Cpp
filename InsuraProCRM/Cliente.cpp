@@ -14,13 +14,13 @@ Cliente::Cliente(int id, const std::string& nome, const std::string& cognome,
     setDataNascita(dataNascita);
 }
 
-int Cliente::getId() { return id_; }
-std::string Cliente::getNome() { return nome_; }
-std::string Cliente::getCognome()  { return cognome_; }
-std::string Cliente::getTelefono() { return telefono_; }
-std::string Cliente::getEmail() { return email_; }
-std::string Cliente::getCodiceFiscale() { return codiceFiscale_; }
-std::string Cliente::getDataNascita() { return dataNascita_; }
+int Cliente::getId() const { return id_; }
+std::string Cliente::getNome() const { return nome_; }
+std::string Cliente::getCognome() const { return cognome_; }
+std::string Cliente::getTelefono() const { return telefono_; }
+std::string Cliente::getEmail() const { return email_; }
+std::string Cliente::getCodiceFiscale() const { return codiceFiscale_; }
+std::string Cliente::getDataNascita() const { return dataNascita_; }
 
 void Cliente::setNome(const std::string& nome) {
     if (!Validatore::campoNonVuoto(nome)) {

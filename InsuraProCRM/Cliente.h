@@ -9,13 +9,13 @@ public:
             const std::string& telefono, const std::string& email,
             const std::string& codiceFiscale, const std::string& dataNascita);
 
-    int getId();
-    std::string getNome();
-    std::string getCognome();
-    std::string getTelefono();
-    std::string getEmail();
-    std::string getCodiceFiscale();
-    std::string getDataNascita();
+    int getId() const;
+    std::string getNome() const; 
+    std::string getCognome() const;
+    std::string getTelefono() const;
+    std::string getEmail() const;
+    std::string getCodiceFiscale() const;
+    std::string getDataNascita() const;
 
     void setNome(const std::string& nome);
     void setCognome(const std::string& cognome);
