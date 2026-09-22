@@ -1,4 +1,16 @@
+# Eseguibili compilati
 crm
+crm.exe
+*.exe
 *.o
 tests/test_*
 !tests/test_*.cpp
+
+# Dati generati a runtime (CSV di persistenza)
+clienti.csv
+appuntamenti.csv
+contratti.csv
+
+# Materiale di lavoro non destinato alla repo pubblica
+CONTEXT.md
+Consegna.png

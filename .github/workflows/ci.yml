@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compila il programma principale
+        run: g++ -std=c++14 -Wall -Wextra main.cpp src/*.cpp -o crm
+
+      - name: Compila la test suite
+        run: g++ -std=c++14 -Wall -Wextra tests/test_all.cpp src/*.cpp -o tests/test_all
+
+      - name: Esegue la test suite
+        run: ./tests/test_all
