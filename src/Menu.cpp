@@ -158,6 +158,7 @@ void Menu::cicloMenuPrincipale() {
             return;                 // unica via d'uscita dal programma
         } else {
             std::cout << "Scelta non valida, riprova." << std::endl;   // qualunque altro numero, o -1: ripropongo il menu
+            attendiInvio();   // senza questa pausa il messaggio sparirebbe subito, cancellato dalla pulizia dello schermo
         }
     }
 }
@@ -185,7 +186,7 @@ void Menu::eseguiSottomenuClienti() {
                 case 4: eliminaClienteInterattivo();   attendiInvio(); break;
                 case 5: cercaClienteInterattivo();     attendiInvio(); break;
                 case 0: return;                        // torna al menu principale
-                default: std::cout << "Scelta non valida, riprova." << std::endl;   // copre sia -1 sia numeri fuori range
+                default: std::cout << "Scelta non valida, riprova." << std::endl; attendiInvio();   // copre sia -1 sia numeri fuori range
             }
         } catch (const OperazioneAnnullata&) {   // l'utente ha digitato il token di annullamento durante un campo
             std::cout << "Operazione annullata." << std::endl;
@@ -394,7 +395,7 @@ void Menu::eseguiSottomenuInterazioni() {
                 case 3: visualizzaInterazioniClienteInterattivo(); attendiInvio(); break;
                 case 4: cercaInterazioniInterattivo();             attendiInvio(); break;
                 case 0: return;
-                default: std::cout << "Scelta non valida, riprova." << std::endl;
+                default: std::cout << "Scelta non valida, riprova." << std::endl; attendiInvio();
             }
         } catch (const OperazioneAnnullata&) {
             std::cout << "Operazione annullata." << std::endl;
