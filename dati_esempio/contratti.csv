@@ -1,0 +1,4 @@
+id,id_cliente,codice_fiscale,data,tipo_polizza,premio,data_scadenza
+3,2,RSSMRC78C15F205Z,22/09/2026,Casa,420.00,22/09/2027
+5,1,BNCGLI85M41L781X,30/09/2026,"RC Auto, furto e incendio",685.50,30/09/2027
+8,4,CLMLSN72H20G273P,01/03/2026,Vita,1200.00,01/03/2046

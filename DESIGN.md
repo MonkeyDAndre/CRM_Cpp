@@ -15,7 +15,8 @@ Requisiti chiave dal brief:
 - Interfaccia a riga di comando interattiva, menu numerato a sottomenu
 - CRUD completo sui clienti + ricerca parziale per nome/cognome
 - Gestione interazioni (appuntamenti e contratti) collegate ai clienti
-- Persistenza su file CSV, caricati all'avvio e salvati all'uscita
+- Persistenza su file CSV, caricati all'avvio e salvati dopo ogni modifica
+  (oltre che all'uscita)
 
 ## Vincoli tecnici
 
@@ -152,9 +153,11 @@ direttamente al filesystem.
 - `salvaClienti(const Rubrica&)`
 - `salvaInterazioni(const StoricoInterazioni&)`
 
-Gestisce il parsing CSV con supporto per campi tra virgolette (per
-note contenenti virgole) e la gestione delle righe malformate (vedi
-Gestione errori).
+Gestisce il parsing CSV con supporto per campi tra virgolette
+(`parseRigaCSV`) e l'operazione inversa in scrittura (`escapeCampoCSV`),
+applicata a **tutti** i campi di testo libero (nome, cognome, telefono,
+email, orario, esito, note, tipo polizza), oltre alla gestione delle righe
+malformate (vedi Gestione errori).
 
 ### Validatore
 Funzioni statiche riutilizzabili:
@@ -164,6 +167,9 @@ Funzioni statiche riutilizzabili:
 - `bool dataValida(string)` — formato gg/mm/aaaa, verificata come data
   reale (giorni per mese, anni bisestili)
 - `bool numeroPositivo(double)`
+- `bool convertiIntero(string, int&)` — converte un ID/scelta di menu
+  solo se composto esclusivamente da cifre (rifiuta `"3abc"`, `"-3"`,
+  valori fuori range)
 - `bool campoNonVuoto(string)` — una stringa composta solo da
   spazi/whitespace (es. `"   "`) è considerata **vuota**: la funzione
   fa trim prima del controllo di lunghezza e ritorna `false` in quel
@@ -184,7 +190,7 @@ richiedi di reinserire solo quel campo }` riusabile identico ovunque.
 ### Menu
 Gestisce solo l'interazione utente: stampa i (sotto)menu, legge input,
 richiama i metodi giusti su `Rubrica` / `StoricoInterazioni`. Nessuna
-logica di business o di file.
+logica di business; per la persistenza delega a `FileManager`.
 
 Struttura del menu:
 ```
@@ -223,8 +229,10 @@ id,id_cliente,codice_fiscale,data,tipo_polizza,premio,data_scadenza
 1,1,RSSMRA80A01H501U,15/03/2026,Auto,450.00,15/03/2027
 ```
 
-Le note testuali sono racchiuse tra virgolette per gestire eventuali
-virgole (standard CSV).
+Ogni campo di testo che contiene virgole o virgolette viene racchiuso
+tra virgolette, con le virgolette interne raddoppiate (standard CSV), ad
+es. `1,"Rossi, Mario",...`. I campi senza caratteri speciali restano
+scritti così come sono.
 
 ## Flusso applicativo
 
@@ -239,13 +247,21 @@ virgole (standard CSV).
 4. Avvio del menu principale
 
 **Durante l'esecuzione:** tutte le operazioni CRUD agiscono sulle
-strutture dati in memoria (`Rubrica`, `StoricoInterazioni`).
+strutture dati in memoria (`Rubrica`, `StoricoInterazioni`). Dopo ogni
+modifica andata a buon fine (aggiunta, modifica, eliminazione) il `Menu`
+chiede a `FileManager` di riscrivere i 3 file CSV: chiudere la finestra
+all'improvviso non fa perdere il lavoro già fatto.
 
-**Uscita (voce "Esci"):** `FileManager` scrive lo stato corrente di
-`Rubrica` e `StoricoInterazioni` nei 3 file CSV (sovrascrittura
-completa), poi il programma termina.
+**Uscita (voce "Esci", oppure fine dello standard input):** `FileManager`
+scrive un'ultima volta lo stato corrente nei 3 file CSV (sovrascrittura
+completa), poi il programma termina. Se l'input termina (Ctrl+Z/Ctrl+D,
+file di input finito) il menu non entra in un ciclo infinito: salva ed
+esce in modo ordinato.
 
 ## Eliminazione cliente
+
+Prima di eliminare, il `Menu` mostra nome e cognome del cliente e, se
+presenti, il numero di interazioni collegate, poi chiede conferma (s/n).
 
 Quando un cliente viene eliminato dalla `Rubrica`:
 - Le interazioni collegate **non vengono eliminate** dallo
@@ -292,8 +308,9 @@ esterne"):
   un semplice programma/funzione di test dedicata.
 - **Rubrica e StoricoInterazioni**: testabili in isolamento su dati in
   memoria (aggiungi/cerca/elimina), senza toccare file reali.
-- **FileManager**: verifica manuale con CSV di prova contenenti casi
-  limite (riga vuota, riga malformata, note con virgole).
+- **FileManager**: round-trip automatico salva/ricarica su CSV di prova
+  con casi limite (riga vuota, riga malformata, virgole e virgolette in
+  qualsiasi campo di testo).
 - **Menu**: verifica manuale end-to-end (uso reale del programma), data
   la natura interattiva basata su `cin`.
 

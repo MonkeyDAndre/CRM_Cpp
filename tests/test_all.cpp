@@ -125,6 +125,17 @@ void testValidatore() {
 // =============================================================================
 // 2) CLIENTE
 // =============================================================================
+void testConvertiIntero() {
+    std::cout << "\n== Validatore::convertiIntero ==\n";
+    int n = -1;
+    verifica(Validatore::convertiIntero("42", n) && n == 42, "convertiIntero: \"42\" -> 42");
+    verifica(Validatore::convertiIntero("  7 ", n) && n == 7, "convertiIntero: tollera spazi ai bordi");
+    verifica(!Validatore::convertiIntero("3abc", n), "convertiIntero: \"3abc\" rifiutato");
+    verifica(!Validatore::convertiIntero("-3", n), "convertiIntero: numeri negativi rifiutati");
+    verifica(!Validatore::convertiIntero("", n), "convertiIntero: stringa vuota rifiutata");
+    verifica(!Validatore::convertiIntero("99999999999999", n), "convertiIntero: fuori range rifiutato");
+}
+
 void testCliente() {
     std::cout << "\n== Cliente ==\n";
 
@@ -415,6 +426,39 @@ void testFileManagerRoundTrip() {
              "1,1,RSSMRA80A01H501U,15/03/2026,10:30,concluso,\"nota con, virgola\"",
              "FileManager: le note con virgola sopravvivono al salva/ricarica");
 
+    // --- Separatore dentro i campi di testo: virgole e virgolette in QUALSIASI
+    //     campo libero (non solo le note) devono sopravvivere al salva/ricarica ---
+    Rubrica rVirg;
+    rVirg.aggiungiCliente("Rossi, Mario", "D'Angelo \"Gigi\"", "333, ufficio",
+                          "m@e.com", "RSSMRA80A01H501U", "01/01/1980");
+    FileManager::salvaClienti(rVirg, fClienti);
+    Rubrica rVirgIn;
+    FileManager::caricaClienti(rVirgIn, fClienti);
+    verifica(rVirgIn.visualizzaTutti().size() == 1,
+             "FileManager: un cliente con virgole nei campi non viene scartato al ricaricamento");
+    verifica(rVirgIn.getById(1, tmp) && tmp.getNome() == "Rossi, Mario" &&
+             tmp.getCognome() == "D'Angelo \"Gigi\"" && tmp.getTelefono() == "333, ufficio",
+             "FileManager: virgole e virgolette nei campi cliente si conservano");
+
+    StoricoInterazioni sVirg;
+    sVirg.aggiungiAppuntamento(1, "RSSMRA80A01H501U", "15/03/2026", "10:30",
+                               "ok, da richiamare", "");
+    sVirg.aggiungiContratto(1, "RSSMRA80A01H501U", "16/03/2026", "Casa, incendio e furto",
+                            300.0, "16/03/2027");
+    FileManager::salvaInterazioni(sVirg, fApp, fContr);
+    StoricoInterazioni sVirgIn;
+    FileManager::caricaInterazioni(sVirgIn, fApp, fContr);
+    verifica(sVirgIn.tutte().size() == 2,
+             "FileManager: esito e tipo polizza con virgole non fanno scartare le righe");
+    if (sVirgIn.tutte().size() == 2) {
+        const Appuntamento* a = dynamic_cast<const Appuntamento*>(sVirgIn.tutte()[0].get());
+        const Contratto* k = dynamic_cast<const Contratto*>(sVirgIn.tutte()[1].get());
+        verifica(a && a->getEsito() == "ok, da richiamare",
+                 "FileManager: l'esito con virgola si conserva");
+        verifica(k && k->getTipoPolizza() == "Casa, incendio e furto",
+                 "FileManager: il tipo polizza con virgola si conserva");
+    }
+
     // --- Riga malformata: viene saltata, le altre si caricano lo stesso ---
     const std::string fMal = "test_tmp_malformato.csv";
     std::ofstream out(fMal);
@@ -447,6 +491,7 @@ int main() {
     std::cout << "=== TEST CRM InsuraPro ===\n";
 
     testValidatore();
+    testConvertiIntero();
     testCliente();
     testRubrica();
     testInterazioni();

@@ -1,0 +1,6 @@
+id,id_cliente,codice_fiscale,data,orario,esito,note
+1,1,BNCGLI85M41L781X,15/09/2026,10:00,Concluso,"Preventivo RC auto, vuole confrontarlo con la polizza attuale"
+2,2,RSSMRC78C15F205Z,22/09/2026,15:30,Concluso,Rinnovo polizza casa
+4,3,FRRLRA90E52A944K,05/10/2026,11:00,Da richiamare,"Interessata a polizza vita, richiamare a fine mese"
+6,4,CLMLSN72H20G273P,20/10/2026,09:30,Programmato,Visita presso la sede del cliente
+7,1,BNCGLI85M41L781X,28/10/2026,17:00,Programmato,Firma contratto RC auto

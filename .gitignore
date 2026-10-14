@@ -6,11 +6,15 @@ crm.exe
 tests/test_*
 !tests/test_*.cpp
 
-# Dati generati a runtime (CSV di persistenza)
-clienti.csv
-appuntamenti.csv
-contratti.csv
+# Dati generati a runtime (CSV di persistenza nella cartella di esecuzione).
+# Lo slash iniziale limita la regola alla radice: i CSV in dati_esempio/
+# restano versionati.
+/clienti.csv
+/appuntamenti.csv
+/contratti.csv
 
 # Materiale di lavoro non destinato alla repo pubblica
 CONTEXT.md
 Consegna.png
+consegna/
+Andrea_Terracciano_crm_cpp*

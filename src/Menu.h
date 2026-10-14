@@ -10,8 +10,8 @@
 // -----------------------------------------------------------------------------
 // Si occupa SOLO del dialogo con l'utente: stampa i menu, legge cio' che viene
 // digitato e chiama i metodi giusti su Rubrica e StoricoInterazioni.
-// Non contiene logica di business e non tocca i file (quello e' compito di
-// FileManager, richiamato solo al momento dell'uscita).
+// Non contiene logica di business e non tocca i file direttamente: delega a
+// FileManager, richiamato dopo ogni modifica andata a buon fine e all'uscita.
 //
 // Rubrica e StoricoInterazioni sono tenuti per RIFERIMENTO (&): il Menu non ne
 // possiede una copia, lavora sugli stessi oggetti creati nel main.
@@ -20,12 +20,17 @@ class Menu {
 public:
     Menu(Rubrica& rubrica, StoricoInterazioni& storico);   // il Menu non crea i dati, li riceve gia' pronti dal main
 
-    // Avvia il ciclo del menu principale; ritorna quando l'utente sceglie "Esci".
+    // Avvia il ciclo del menu principale; ritorna quando l'utente sceglie "Esci"
+    // oppure quando lo standard input termina (in entrambi i casi salva prima).
     void eseguiMenuPrincipale();
 
 private:
     Rubrica& rubrica_;              // riferimento, non copia: stesso oggetto per tutta la vita del programma
     StoricoInterazioni& storico_;   // idem
+
+    // Il ciclo vero e proprio del menu principale (eseguiMenuPrincipale lo
+    // avvolge per gestire la fine dell'input).
+    void cicloMenuPrincipale();
 
     // --- Sottomenu "Gestione Clienti" e relative operazioni ---
     void eseguiSottomenuClienti();
@@ -45,6 +50,8 @@ private:
     void visualizzaInterazioniClienteInterattivo();
     void cercaInterazioniInterattivo();
 
+    // Riscrive tutti i CSV con lo stato attuale (chiamata dopo ogni modifica).
+    void salvaDati();
     // Salva tutto su file e stampa il messaggio di uscita.
     void salvaESci();
 
@@ -54,6 +61,10 @@ private:
     static int leggiSceltaMenu();
     // Stampa "prompt" e restituisce l'intera riga digitata dall'utente.
     static std::string leggiRiga(const std::string& prompt);   // static: non ha bisogno di accedere a rubrica_/storico_
+    // Chiede un ID e lo converte: ritorna false (e avvisa) se non e' un intero valido.
+    static bool leggiId(const std::string& prompt, int& id);
+    // Ripete "domanda (s/n)" finche' la risposta non e' s oppure n.
+    static bool chiediConferma(const std::string& domanda);
 
     // --- Aiutanti per la presentazione delle schermate ---
     // Pulisce il terminale (comando diverso a seconda del sistema operativo).

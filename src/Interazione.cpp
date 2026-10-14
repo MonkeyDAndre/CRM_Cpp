@@ -26,30 +26,3 @@ int Interazione::getId() const                          { return id_; }         
 int Interazione::getIdCliente() const                   { return idCliente_; }               // lettura semplice
 std::string Interazione::getCodiceFiscaleCliente() const { return codiceFiscaleCliente_; }    // lettura semplice
 std::string Interazione::getData() const                 { return data_; }                    // lettura semplice
-
-// -----------------------------------------------------------------------------
-// escapeCampoCSV: rende sicuro un campo di testo dentro un CSV
-// -----------------------------------------------------------------------------
-// Regola standard del formato CSV:
-//  - se il testo contiene una virgola o una virgoletta, va racchiuso fra " ";
-//  - ogni virgoletta interna va raddoppiata ("" al posto di ").
-// Se il testo non ha caratteri "pericolosi" lo si lascia identico.
-std::string Interazione::escapeCampoCSV(const std::string& campo) {
-    bool serveEscape = campo.find(',') != std::string::npos ||   // c'e' almeno una virgola nel testo?
-                       campo.find('"') != std::string::npos;     // oppure almeno una virgoletta?
-
-    if (!serveEscape) {
-        return campo;   // niente di pericoloso: restituisco il campo cosi' com'e', senza toccarlo
-    }
-
-    std::string risultato = "\"";   // apro le virgolette del campo quotato
-    for (char c : campo) {          // scorro ogni carattere del testo originale
-        if (c == '"') {
-            risultato += "\"\"";   // virgoletta raddoppiata
-        } else {
-            risultato += c;        // carattere normale, lo copio cosi' com'e'
-        }
-    }
-    risultato += "\"";   // chiudo le virgolette del campo quotato
-    return risultato;
-}

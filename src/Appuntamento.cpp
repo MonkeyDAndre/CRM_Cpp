@@ -1,5 +1,6 @@
 #include "Appuntamento.h"
 #include "Validatore.h"
+#include "FileManager.h"   // FileManager::escapeCampoCSV
 #include <iostream>
 #include <stdexcept>   // std::invalid_argument
 
@@ -31,16 +32,16 @@ std::string Appuntamento::getNote() const   { return note_; }     // lettura sem
 // toCSV: costruisce la riga da salvare in appuntamenti.csv
 // -----------------------------------------------------------------------------
 // Ordine delle colonne: id,id_cliente,codice_fiscale,data,orario,esito,note
-// Solo le note passano da escapeCampoCSV perche' sono l'unico campo che puo'
-// contenere virgole.
+// Orario, esito e note sono testo libero: passano tutti da escapeCampoCSV,
+// cosi' una virgola digitata dall'utente non rompe la riga.
 std::string Appuntamento::toCSV() const {
-    return std::to_string(getId()) + "," +          // colonna 1: id
-           std::to_string(getIdCliente()) + "," +   // colonna 2: id del cliente collegato
-           getCodiceFiscaleCliente() + "," +         // colonna 3: codice fiscale duplicato
-           getData() + "," +                         // colonna 4: data dell'appuntamento
-           orario_ + "," +                           // colonna 5: orario
-           esito_ + "," +                             // colonna 6: esito
-           escapeCampoCSV(note_);                     // colonna 7: note, protette se contengono virgole/virgolette
+    return std::to_string(getId()) + "," +                  // colonna 1: id
+           std::to_string(getIdCliente()) + "," +           // colonna 2: id del cliente collegato
+           getCodiceFiscaleCliente() + "," +                 // colonna 3: codice fiscale duplicato
+           getData() + "," +                                 // colonna 4: data dell'appuntamento
+           FileManager::escapeCampoCSV(orario_) + "," +     // colonna 5: orario
+           FileManager::escapeCampoCSV(esito_) + "," +      // colonna 6: esito
+           FileManager::escapeCampoCSV(note_);              // colonna 7: note
 }
 
 // -----------------------------------------------------------------------------

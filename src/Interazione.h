@@ -44,11 +44,6 @@ public:
     virtual void stampa(const std::string& descrizioneCliente = "") const = 0;
     virtual std::string getTipo() const = 0; // "Appuntamento" oppure "Contratto"
 
-protected:
-    // Utilita' condivisa dalle figlie: mette una stringa fra virgolette se
-    // contiene virgole o virgolette, cosi' il CSV resta leggibile.
-    static std::string escapeCampoCSV(const std::string& campo);   // protected: solo le classi figlie possono usarla, non il resto del programma
-
 private:
     int id_;
     int idCliente_;

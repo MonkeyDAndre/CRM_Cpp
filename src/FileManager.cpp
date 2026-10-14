@@ -65,6 +65,33 @@ std::vector<std::string> FileManager::parseRigaCSV(const std::string& riga) {
 }
 
 // =============================================================================
+// escapeCampoCSV: rende sicuro un campo di testo dentro un CSV
+// =============================================================================
+// Regola standard del formato CSV:
+//  - se il testo contiene una virgola o una virgoletta, va racchiuso fra " ";
+//  - ogni virgoletta interna va raddoppiata ("" al posto di ").
+// Se il testo non ha caratteri "pericolosi" lo si lascia identico.
+std::string FileManager::escapeCampoCSV(const std::string& campo) {
+    bool serveEscape = campo.find(',') != std::string::npos ||   // c'e' almeno una virgola nel testo?
+                       campo.find('"') != std::string::npos;     // oppure almeno una virgoletta?
+
+    if (!serveEscape) {
+        return campo;   // niente di pericoloso: restituisco il campo cosi' com'e', senza toccarlo
+    }
+
+    std::string risultato = "\"";   // apro le virgolette del campo quotato
+    for (char c : campo) {          // scorro ogni carattere del testo originale
+        if (c == '"') {
+            risultato += "\"\"";   // virgoletta raddoppiata
+        } else {
+            risultato += c;        // carattere normale, lo copio cosi' com'e'
+        }
+    }
+    risultato += "\"";   // chiudo le virgolette del campo quotato
+    return risultato;
+}
+
+// =============================================================================
 // CLIENTI
 // =============================================================================
 
@@ -145,13 +172,16 @@ void FileManager::salvaClienti(const Rubrica& rubrica, const std::string& path) 
 
     file << "id,nome,cognome,telefono,email,codice_fiscale,data_nascita\n";   // riga di intestazione, letta e saltata da caricaClienti
     for (const Cliente& c : rubrica.visualizzaTutti()) {   // scrivo una riga per ogni cliente attualmente in memoria
+        // Nome, cognome, telefono ed email sono testo libero: possono contenere
+        // virgole o virgolette (es. "Rossi, Mario"), quindi passano dall'escape.
+        // Codice fiscale e data hanno un formato validato senza separatori.
         file << c.getId() << ","
-             << c.getNome() << ","
-             << c.getCognome() << ","
-             << c.getTelefono() << ","
-             << c.getEmail() << ","
+             << escapeCampoCSV(c.getNome()) << ","
+             << escapeCampoCSV(c.getCognome()) << ","
+             << escapeCampoCSV(c.getTelefono()) << ","
+             << escapeCampoCSV(c.getEmail()) << ","
              << c.getCodiceFiscale() << ","
-             << c.getDataNascita() << "\n";   // nessun campo cliente contiene virgole per costruzione, quindi niente escape qui
+             << c.getDataNascita() << "\n";
     }
 }
 

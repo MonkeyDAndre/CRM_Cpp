@@ -9,7 +9,7 @@
 //   2. il FileManager le riempie leggendo i file CSV (se esistono);
 //   3. si avvia il menu interattivo;
 //   4. all'uscita dal menu il programma termina (il salvataggio su file avviene
-//      dentro la voce "Esci" del menu).
+//      dentro il menu, dopo ogni modifica e alla voce "Esci").
 // =============================================================================
 
 #include "src/Rubrica.h"

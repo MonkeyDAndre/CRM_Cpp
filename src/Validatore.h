@@ -38,7 +38,13 @@ namespace Validatore {
     bool dataValida(const std::string& data);
 
     // true se il numero non e' negativo (0 compreso).
-    bool numeroPositivo(double valore);  
+    bool numeroPositivo(double valore);
+
+    // Converte "testo" in un intero non negativo. Ritorna true e scrive il
+    // valore in "risultato" solo se il testo (spazi ai bordi esclusi) e'
+    // composto esclusivamente da cifre e sta nel range di int. Diversamente da
+    // std::stoi, rifiuta input come "3abc" invece di leggerne solo il "3".
+    bool convertiIntero(const std::string& testo, int& risultato);
 }
 
 #endif  

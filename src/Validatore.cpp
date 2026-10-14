@@ -1,5 +1,6 @@
 #include "Validatore.h"   // dichiarazioni delle funzioni che implemento qui sotto
-#include <cctype>       
+#include <cctype>
+#include <stdexcept>   // std::out_of_range, lanciata da std::stoi
 
 namespace Validatore {  
     // -------------------------------------------------------------------------
@@ -157,5 +158,28 @@ namespace Validatore {
     // -------------------------------------------------------------------------
     bool numeroPositivo(double valore) {
         return valore >= 0;   // nota per me: il nome dice "positivo" ma qui accetto anche lo 0 (>= e non >)
+    }
+
+    // -------------------------------------------------------------------------
+    // convertiIntero: testo -> int, solo se il testo e' fatto di sole cifre
+    // -------------------------------------------------------------------------
+    bool convertiIntero(const std::string& testo, int& risultato) {
+        std::string t = trim(testo);   // tolgo spazi/tab ai bordi prima di controllare le cifre
+        if (t.empty()) {
+            return false;   // niente da convertire
+        }
+        for (char c : t) {
+            // static_cast a unsigned char: passare un char "negativo" (es. lettere
+            // accentate) a isdigit e' undefined behaviour senza questo cast.
+            if (!std::isdigit(static_cast<unsigned char>(c))) {
+                return false;   // almeno un carattere non e' una cifra (es. "3abc", "-3")
+            }
+        }
+        try {
+            risultato = std::stoi(t);   // tutte cifre, ma potrebbe essere troppo grande per un int
+        } catch (const std::out_of_range&) {
+            return false;   // es. "99999999999999"
+        }
+        return true;
     }
 }

@@ -25,6 +25,12 @@ namespace FileManager {
     // (che possono contenere virgole) e le virgolette raddoppiate "".
     std::vector<std::string> parseRigaCSV(const std::string& riga);
 
+    // Operazione inversa di parseRigaCSV: rende sicuro un campo di testo da
+    // scrivere nel CSV. Se contiene virgole o virgolette lo racchiude fra " "
+    // e raddoppia le virgolette interne; altrimenti lo lascia identico.
+    // Va applicata a OGNI campo di testo libero, non solo alle note.
+    std::string escapeCampoCSV(const std::string& campo);
+
     // --- Clienti ---
     void caricaClienti(Rubrica& rubrica, const std::string& path = "clienti.csv");   // valore di default: nome file standard del progetto
     void salvaClienti(const Rubrica& rubrica, const std::string& path = "clienti.csv");

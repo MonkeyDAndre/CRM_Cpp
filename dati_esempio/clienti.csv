@@ -1,0 +1,6 @@
+id,nome,cognome,telefono,email,codice_fiscale,data_nascita
+1,Giulia,Bianchi,3471234567,giulia.bianchi@email.it,BNCGLI85M41L781X,01/08/1985
+2,Marco,Rossi,3389876543,marco.rossi@email.it,RSSMRC78C15F205Z,15/03/1978
+3,Laura,Ferrari,3405556677,laura.ferrari@email.it,FRRLRA90E52A944K,12/05/1990
+4,Alessandro,Colombo,3291122334,a.colombo@email.it,CLMLSN72H20G273P,20/06/1972
+5,Chiara,Ricci,3317788990,chiara.ricci@email.it,RCCCHR95T63D612Q,23/12/1995

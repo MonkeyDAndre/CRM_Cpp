@@ -1,5 +1,6 @@
 #include "Contratto.h"
 #include "Validatore.h"
+#include "FileManager.h"   // FileManager::escapeCampoCSV
 #include <iostream>
 #include <stdexcept>   // std::invalid_argument
 
@@ -45,7 +46,7 @@ std::string Contratto::toCSV() const {
            std::to_string(getIdCliente()) + "," +   // colonna 2: id del cliente collegato
            getCodiceFiscaleCliente() + "," +         // colonna 3: codice fiscale duplicato
            getData() + "," +                         // colonna 4: data di stipula
-           tipoPolizza_ + "," +                       // colonna 5: tipo polizza
+           FileManager::escapeCampoCSV(tipoPolizza_) + "," +   // colonna 5: tipo polizza (testo libero, puo' contenere virgole)
            std::to_string(premio_) + "," +            // colonna 6: premio (std::to_string su un double da' 6 decimali fissi)
            dataScadenza_;                              // colonna 7: data di scadenza
 }

@@ -4,7 +4,6 @@
 #include <iostream>
 #include <stdexcept>   // std::invalid_argument, std::stoi, std::stod, std::out_of_range
 #include <cstdlib>     // std::system, usato da pulisciSchermo
-#include <cctype>      // std::isdigit
 
 namespace {
     // Digitando esattamente questo token in un campo, l'utente annulla
@@ -17,6 +16,21 @@ namespace {
     // Viene lanciata da leggiRiga() e risale la pila di chiamate fino al
     // catch dedicato nello switch dei sottomenu.
     struct OperazioneAnnullata {};
+
+    // Altra eccezione "segnale": lo standard input e' terminato (Ctrl+Z/Ctrl+D,
+    // file di input finito, terminale chiuso). Da quel momento ogni getline
+    // fallirebbe all'istante e il menu girerebbe all'infinito: invece la
+    // lanciamo e la intercettiamo nel menu principale, che salva ed esce.
+    struct InputTerminato {};
+
+    // Legge una riga da std::cin; se lo stream e' finito lancia InputTerminato.
+    std::string leggiRigaGrezza() {
+        std::string riga;
+        if (!std::getline(std::cin, riga)) {
+            throw InputTerminato();
+        }
+        return riga;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -35,8 +49,7 @@ Menu::Menu(Rubrica& rubrica, StoricoInterazioni& storico)
 // riceve mai quel valore come se fosse un dato valido.
 std::string Menu::leggiRiga(const std::string& prompt) {
     std::cout << prompt;   // niente std::endl qui: voglio che l'utente digiti sulla stessa riga del prompt
-    std::string valore;
-    std::getline(std::cin, valore);   // getline (non cin >>) per prendere l'intera riga, spazi compresi
+    std::string valore = leggiRigaGrezza();   // getline (non cin >>) per prendere l'intera riga, spazi compresi
     if (valore == TOKEN_ANNULLA) {
         throw OperazioneAnnullata();
     }
@@ -47,25 +60,31 @@ std::string Menu::leggiRiga(const std::string& prompt) {
 // Ritorna -1 se la riga, dopo aver tolto gli spazi ai bordi, non e' composta
 // esclusivamente da cifre. Chi chiama trattera' -1 come "scelta non valida".
 int Menu::leggiSceltaMenu() {
-    std::string riga;
-    std::getline(std::cin, riga);   // leggo la riga intera
-    riga = Validatore::trim(riga);  // tolgo spazi/tab/a-capo ai bordi prima di controllare le cifre
-
-    if (riga.empty()) {
-        return -1;   // riga vuota o di soli spazi: nessuna cifra da leggere
+    int scelta;
+    if (!Validatore::convertiIntero(leggiRigaGrezza(), scelta)) {
+        return -1;   // vuota, non numerica (es. "3abc", "-3") o fuori dal range di int
     }
-    for (char c : riga) {
-        // static_cast a unsigned char: passare un char "negativo" (es. lettere
-        // accentate) a isdigit e' undefined behaviour senza questo cast.
-        if (!std::isdigit(static_cast<unsigned char>(c))) {
-            return -1;   // almeno un carattere non e' una cifra (es. "3abc", "-3")
-        }
-    }
+    return scelta;
+}
 
-    try {
-        return std::stoi(riga);   // qui riga e' garantita fatta di sole cifre, ma potrebbe essere troppo grande per un int
-    } catch (const std::out_of_range&) {
-        return -1;   // es. "99999999999999": tutte cifre, ma fuori dal range di int
+// Chiede un ID con leggiRiga (quindi "&" annulla) e lo converte in intero.
+// Ritorna false, dopo aver avvisato l'utente, se il testo non e' un numero
+// intero valido: niente piu' "3abc" interpretato come 3 da std::stoi.
+bool Menu::leggiId(const std::string& prompt, int& id) {
+    if (!Validatore::convertiIntero(leggiRiga(prompt), id)) {
+        std::cout << "ID non valido." << std::endl;
+        return false;
+    }
+    return true;
+}
+
+// Ripete la domanda finche' l'utente non risponde s oppure n.
+bool Menu::chiediConferma(const std::string& domanda) {
+    while (true) {
+        std::string risposta = Validatore::trim(leggiRiga(domanda + " (s/n): "));
+        if (risposta == "s" || risposta == "S") return true;
+        if (risposta == "n" || risposta == "N") return false;
+        std::cout << "Rispondi con s oppure n." << std::endl;
     }
 }
 
@@ -103,14 +122,25 @@ void Menu::mostraSchermata(const std::string& titolo, bool permetteAnnulla) {
 // visibile invece di sparire non appena il menu chiamante si ripulisce.
 void Menu::attendiInvio() {
     std::cout << "\nPremi INVIO per continuare...";
-    std::string scarto;
-    std::getline(std::cin, scarto);   // il valore letto non serve, ci interessa solo aspettare
+    leggiRigaGrezza();   // il valore letto non serve, ci interessa solo aspettare
 }
 
 // =============================================================================
 // MENU PRINCIPALE
 // =============================================================================
+// Se lo standard input termina in qualsiasi punto (anche dentro un sottomenu),
+// InputTerminato risale fino a qui: salviamo ed usciamo in modo ordinato
+// invece di restare bloccati in un ciclo infinito.
 void Menu::eseguiMenuPrincipale() {
+    try {
+        cicloMenuPrincipale();
+    } catch (const InputTerminato&) {
+        std::cout << "\nInput terminato." << std::endl;
+        salvaESci();
+    }
+}
+
+void Menu::cicloMenuPrincipale() {
     while (true) {   // ciclo infinito: l'unico modo per uscire e' la scelta "3" (vedi return piu' sotto)
         mostraSchermata("MENU PRINCIPALE");
         std::cout << "1. Gestione Clienti\n"
@@ -184,6 +214,7 @@ void Menu::aggiungiClienteInterattivo() {
         try {
             rubrica_.aggiungiCliente(nome, cognome, telefono, email,
                                      codiceFiscale, dataNascita);   // qui scattano tutte le validazioni di Cliente
+            salvaDati();   // salvo subito: se il programma viene chiuso di colpo, il cliente non va perso
             std::cout << "Cliente aggiunto con successo." << std::endl;
             return;                 // inserimento riuscito: usciamo dal ciclo
         } catch (const std::invalid_argument& e) {
@@ -243,13 +274,9 @@ void Menu::modificaClienteInterattivo() {
     mostraSchermata("MODIFICA CLIENTE", true);
     stampaListaClienti(rubrica_.visualizzaTutti());   // cosi' l'utente vede subito gli id tra cui scegliere
     std::cout << std::endl;
-    std::string idStr = leggiRiga("ID cliente da modificare: ");
     int id;
-    try {
-        id = std::stoi(idStr);   // converto il testo digitato in un numero
-    } catch (const std::exception&) {
-        std::cout << "ID non valido." << std::endl;   // idStr non era un numero: niente da fare, esco dalla funzione
-        return;
+    if (!leggiId("ID cliente da modificare: ", id)) {
+        return;   // non era un numero: il messaggio l'ha gia' stampato leggiId
     }
 
     // getById vuole un Cliente da riempire: ne creiamo uno "provvisorio" con
@@ -280,6 +307,7 @@ void Menu::modificaClienteInterattivo() {
 
     try {
         rubrica_.modificaCliente(id, nome, cognome, telefono, email, cf, dataNascita);   // qui scattano di nuovo tutte le validazioni
+        salvaDati();
         std::cout << "Cliente modificato con successo." << std::endl;
     } catch (const std::invalid_argument& e) {
         std::cout << "Errore: " << e.what() << std::endl;   // nota per me: qui non rientro in un ciclo di retry come in "aggiungi cliente"
@@ -293,20 +321,35 @@ void Menu::eliminaClienteInterattivo() {
     mostraSchermata("ELIMINA CLIENTE", true);
     stampaListaClienti(rubrica_.visualizzaTutti());   // cosi' l'utente vede subito gli id tra cui scegliere
     std::cout << std::endl;
-    std::string idStr = leggiRiga("ID cliente da eliminare: ");
     int id;
-    try {
-        id = std::stoi(idStr);
-    } catch (const std::exception&) {
-        std::cout << "ID non valido." << std::endl;
+    if (!leggiId("ID cliente da eliminare: ", id)) {
         return;
     }
 
-    if (rubrica_.eliminaCliente(id)) {   // eliminaCliente ritorna un bool, comodo da usare direttamente nell'if
-        std::cout << "Cliente eliminato." << std::endl;
-    } else {
+    Cliente cliente(0, "x", "x", "x", "x@x.com", "0000000000000000", "01/01/2000");   // placeholder valido, riempito da getById
+    if (!rubrica_.getById(id, cliente)) {
         std::cout << "Cliente non trovato." << std::endl;
+        return;
     }
+
+    // Prima di eliminare mostro chi sto eliminando e quante interazioni ha:
+    // le interazioni restano nello storico (scelta di progetto), ma l'utente
+    // deve saperlo prima di confermare.
+    std::cout << "Stai per eliminare: " << cliente.getNome() << " " << cliente.getCognome() << std::endl;
+    size_t numInterazioni = storico_.getPerCliente(id, "").size();
+    if (numInterazioni > 0) {
+        std::cout << "Attenzione: il cliente ha " << numInterazioni
+                  << " interazioni registrate. Resteranno nello storico e saranno\n"
+                  << "ancora consultabili tramite il suo ID (" << id << ")." << std::endl;
+    }
+    if (!chiediConferma("Confermi l'eliminazione?")) {
+        std::cout << "Eliminazione annullata." << std::endl;
+        return;
+    }
+
+    rubrica_.eliminaCliente(id);   // esiste di sicuro: l'abbiamo appena trovato con getById
+    salvaDati();
+    std::cout << "Cliente eliminato." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -365,12 +408,10 @@ void Menu::eseguiSottomenuInterazioni() {
 // -----------------------------------------------------------------------------
 void Menu::aggiungiAppuntamentoInterattivo() {
     mostraSchermata("AGGIUNGI APPUNTAMENTO", true);
-    std::string idStr = leggiRiga("ID cliente: ");
+    stampaListaClienti(rubrica_.visualizzaTutti());   // cosi' l'utente vede subito gli id tra cui scegliere
+    std::cout << std::endl;
     int idCliente;
-    try {
-        idCliente = std::stoi(idStr);
-    } catch (const std::exception&) {
-        std::cout << "ID non valido." << std::endl;
+    if (!leggiId("ID cliente: ", idCliente)) {
         return;
     }
 
@@ -393,6 +434,7 @@ void Menu::aggiungiAppuntamentoInterattivo() {
         try {
             storico_.aggiungiAppuntamento(idCliente, cliente.getCodiceFiscale(),
                                           data, orario, esito, note);   // il CF del cliente lo prendo dall'oggetto appena recuperato, non lo richiedo all'utente
+            salvaDati();
             std::cout << "Appuntamento aggiunto con successo." << std::endl;
             return;
         } catch (const std::invalid_argument& e) {
@@ -417,12 +459,10 @@ void Menu::aggiungiAppuntamentoInterattivo() {
 // -----------------------------------------------------------------------------
 void Menu::aggiungiContrattoInterattivo() {
     mostraSchermata("AGGIUNGI CONTRATTO", true);
-    std::string idStr = leggiRiga("ID cliente: ");
+    stampaListaClienti(rubrica_.visualizzaTutti());   // cosi' l'utente vede subito gli id tra cui scegliere
+    std::cout << std::endl;
     int idCliente;
-    try {
-        idCliente = std::stoi(idStr);
-    } catch (const std::exception&) {
-        std::cout << "ID non valido." << std::endl;
+    if (!leggiId("ID cliente: ", idCliente)) {
         return;
     }
 
@@ -454,6 +494,7 @@ void Menu::aggiungiContrattoInterattivo() {
         try {
             storico_.aggiungiContratto(idCliente, cliente.getCodiceFiscale(),
                                        data, tipoPolizza, premio, dataScadenza);
+            salvaDati();
             std::cout << "Contratto aggiunto con successo." << std::endl;
             return;
         } catch (const std::invalid_argument& e) {
@@ -480,12 +521,8 @@ void Menu::visualizzaInterazioniClienteInterattivo() {
     mostraSchermata("INTERAZIONI CLIENTE", true);
     stampaListaClienti(rubrica_.visualizzaTutti());   // cosi' l'utente vede subito gli id tra cui scegliere
     std::cout << std::endl;
-    std::string idStr = leggiRiga("ID cliente: ");
     int idCliente;
-    try {
-        idCliente = std::stoi(idStr);
-    } catch (const std::exception&) {
-        std::cout << "ID non valido." << std::endl;
+    if (!leggiId("ID cliente: ", idCliente)) {
         return;
     }
 
@@ -529,8 +566,15 @@ void Menu::cercaInterazioniInterattivo() {
 // =============================================================================
 // USCITA
 // =============================================================================
-void Menu::salvaESci() {
+// Riscrive tutti i file CSV con lo stato attuale in memoria. Viene chiamata
+// dopo ogni modifica andata a buon fine (aggiunta, modifica, eliminazione),
+// cosi' chiudere la finestra all'improvviso non fa perdere il lavoro fatto.
+void Menu::salvaDati() {
     FileManager::salvaClienti(rubrica_);       // sovrascrive clienti.csv con lo stato attuale della rubrica
     FileManager::salvaInterazioni(storico_);   // sovrascrive appuntamenti.csv e contratti.csv
+}
+
+void Menu::salvaESci() {
+    salvaDati();   // i dati sono gia' salvati dopo ogni modifica: qui e' solo una sicurezza in piu'
     std::cout << "Dati salvati. Uscita in corso." << std::endl;
 }
